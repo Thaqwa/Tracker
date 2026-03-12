@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ramadan Porridge Distribution</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+        #reader {
+            width: 100%;
+            max-width: 500px;
+            margin: 0 auto;
+        }
+        .number-btn {
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .number-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+        }
+        .number-btn:active {
+            transform: translateY(0);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-green-50 to-blue-50 min-h-screen">
+    <div class="container mx-auto px-4 py-6 max-w-6xl">
+        <!-- Header with Home Button -->
+        <div class="bg-white rounded-lg shadow-lg p-6 mb-6">
+            <div class="flex items-center justify-between mb-4">
+                <button onclick="goToHome()" class="flex items-center gap-2 bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold py-2 px-4 rounded-lg transition duration-300">
+                    <i class="fas fa-home"></i>
+                    <span class="hidden sm:inline">Dashboard</span>
+                </button>
+                <h1 class="text-2xl md:text-3xl font-bold text-green-700 text-center flex-1">
+                    <i class="fas fa-moon mr-2"></i>Porridge Distribution
+                </h1>
+                <div class="w-20 sm:w-24"></div> <!-- Spacer for centering -->
+            </div>
+            
+            <!-- Progress Bar -->
+            <div class="mt-4">
+                <div class="flex justify-between items-center mb-2">
+                    <span class="text-sm font-semibold text-gray-700">
+                        <i class="fas fa-chart-line mr-1 text-green-600"></i>Distribution Progress
+                    </span>
+                    <span class="text-sm font-bold text-green-600">
+                        <span id="progressCount">0</span> / 450 Families
+                        <span class="text-gray-500">(<span id="progressPercent">0</span>%)</span>
+                    </span>
+                </div>
+                <div class="w-full bg-gray-200 rounded-full h-4 overflow-hidden shadow-inner">
+                    <div id="progressBar" class="bg-gradient-to-r from-green-500 to-green-600 h-4 rounded-full transition-all duration-500 ease-out flex items-center justify-end pr-2" style="width: 0%">
+                        <span class="text-xs text-white font-bold drop-shadow" id="progressBarText"></span>
+                    </div>
+                </div>
+                <p class="text-xs text-gray-500 mt-1 text-center">
+                    <i class="fas fa-info-circle mr-1"></i>
+                    <span id="remainingText">450 families remaining</span>
+                </p>
+            </div>
+        </div>
+
+        <!-- Scanner Section -->
+        <div class="bg-white rounded-lg shadow-lg p-6 mb-6">
+            <h2 class="text-2xl font-bold text-gray-800 mb-4">
+                <i class="fas fa-qrcode mr-2"></i>Scan Membership QR Code
+            </h2>
+            
+            <div class="mb-4">
+                <button id="startScanBtn" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-lg transition duration-300">
+                    <i class="fas fa-camera mr-2"></i>Start QR Code Scanner
+                </button>
+            </div>
+
+            <div id="reader" class="hidden mb-4"></div>
+
+            <div class="mb-4">
+                <label class="block text-gray-700 font-semibold mb-2">Membership Number:</label>
+                <input type="text" id="membershipInput" 
+                    class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-green-500 focus:outline-none text-lg"
+                    placeholder="Scan QR code or enter manually">
+            </div>
+
+            <button id="manualSubmitBtn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg transition duration-300">
+                <i class="fas fa-check mr-2"></i>Submit Manually
+            </button>
+        </div>
+
+        <!-- Export Section -->
+        <div class="bg-white rounded-lg shadow-lg p-6 mb-6">
+            <div class="flex flex-col sm:flex-row gap-4">
+                <button id="exportBtn" class="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 px-6 rounded-lg transition duration-300">
+                    <i class="fas fa-file-excel mr-2"></i>Export to Excel
+                </button>
+                <button id="resetBtn" class="hidden flex-1 bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-6 rounded-lg transition duration-300">
+                    <i class="fas fa-trash mr-2"></i>Reset All Data
+                </button>
+            </div>
+        </div>
+
+        <!-- Records Table -->
+        <div class="bg-white rounded-lg shadow-lg p-4 md:p-6">
+            <h2 class="text-2xl font-bold text-gray-800 mb-4">
+                <i class="fas fa-list mr-2"></i>Distribution Records (<span id="recordCount">0</span>)
+            </h2>
+            
+            <!-- Desktop Table View -->
+            <div class="hidden md:block overflow-x-auto">
+                <table class="w-full">
+                    <thead class="bg-green-600 text-white">
+                        <tr>
+                            <th class="px-4 py-3 text-left rounded-tl-lg">#</th>
+                            <th class="px-4 py-3 text-left">Membership No.</th>
+                            <th class="px-4 py-3 text-left">Family Count</th>
+                            <th class="px-4 py-3 text-left rounded-tr-lg">Time Issued</th>
+                        </tr>
+                    </thead>
+                    <tbody id="recordsTableDesktop" class="divide-y divide-gray-200">
+                        <tr>
+                            <td colspan="4" class="px-4 py-8 text-center text-gray-500">
+                                <i class="fas fa-inbox text-4xl mb-2"></i>
+                                <p>No records yet. Start scanning to add distributions.</p>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Mobile Card View -->
+            <div id="recordsTableMobile" class="md:hidden space-y-3">
+                <div class="text-center py-12 text-gray-500">
+                    <i class="fas fa-inbox text-4xl mb-3"></i>
+                    <p>No records yet. Start scanning to add distributions.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let html5QrCode = null;
+        let isScanning = false;
+        let records = [];
+        const TOTAL_FAMILIES = 450;
+
+        // Navigate to home/dashboard
+        function goToHome() {
+            Swal.fire({
+                title: 'Go to Dashboard?',
+                text: "You'll be redirected to the main dashboard",
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonColor: '#16a34a',
+                cancelButtonColor: '#6b7280',
+                confirmButtonText: '<i class="fas fa-home mr-2"></i>Yes, go to Dashboard',
+                cancelButtonText: 'Stay Here'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    // Replace with your actual dashboard URL
+                    window.location.href = 'index.html'; // or 'dashboard.html'
+                }
+            });
+        }
+
+        // Update progress bar
+        function updateProgress() {
+            const count = records.length;
+            const percentage = Math.round((count / TOTAL_FAMILIES) * 100);
+            const remaining = TOTAL_FAMILIES - count;
+
+            document.getElementById('progressCount').textContent = count;
+            document.getElementById('progressPercent').textContent = percentage;
+            document.getElementById('progressBar').style.width = percentage + '%';
+            
+            // Show percentage in bar if > 5%
+            if (percentage > 5) {
+                document.getElementById('progressBarText').textContent = percentage + '%';
+            } else {
+                document.getElementById('progressBarText').textContent = '';
+            }
+
+            // Update remaining text
+            if (remaining > 0) {
+                document.getElementById('remainingText').textContent = `${remaining} families remaining`;
+            } else {
+                document.getElementById('remainingText').innerHTML = '<i class="fas fa-check-circle mr-1 text-green-600"></i>All families served!';
+            }
+
+            // Change color when complete
+            const progressBar = document.getElementById('progressBar');
+            if (percentage === 100) {
+                progressBar.classList.remove('from-green-500', 'to-green-600');
+                progressBar.classList.add('from-emerald-500', 'to-emerald-600');
+            } else {
+                progressBar.classList.remove('from-emerald-500', 'to-emerald-600');
+                progressBar.classList.add('from-green-500', 'to-green-600');
+            }
+        }
+
+        // Load records from memory
+        function loadRecords() {
+            const saved = JSON.parse(localStorage.getItem('porridgeRecords') || '[]');
+            records = saved;
+            updateTable();
+            updateProgress();
+        }
+
+        // Save records to memory
+        function saveRecords() {
+            localStorage.setItem('porridgeRecords', JSON.stringify(records));
+        }
+
+        // Format time
+        function formatTime(date) {
+            return new Date(date).toLocaleString('en-US', {
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit'
+            });
+        }
+
+        // Update table display
+        function updateTable() {
+            const tbodyDesktop = document.getElementById('recordsTableDesktop');
+            const mobileView = document.getElementById('recordsTableMobile');
+            const countSpan = document.getElementById('recordCount');
+            
+            countSpan.textContent = records.length;
+
+            if (records.length === 0) {
+                // Desktop empty state
+                tbodyDesktop.innerHTML = `
+                    <tr>
+                        <td colspan="4" class="px-4 py-8 text-center text-gray-500">
+                            <i class="fas fa-inbox text-4xl mb-2"></i>
+                            <p>No records yet. Start scanning to add distributions.</p>
+                        </td>
+                    </tr>
+                `;
+                
+                // Mobile empty state
+                mobileView.innerHTML = `
+                    <div class="text-center py-12 text-gray-500">
+                        <i class="fas fa-inbox text-4xl mb-3"></i>
+                        <p>No records yet. Start scanning to add distributions.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            // Desktop table view
+            tbodyDesktop.innerHTML = records.map((record, index) => `
+                <tr class="hover:bg-gray-50 transition duration-150">
+                    <td class="px-4 py-3 font-semibold text-gray-700">${index + 1}</td>
+                    <td class="px-4 py-3 font-mono text-blue-600">${record.membershipNo}</td>
+                    <td class="px-4 py-3">
+                        <span class="bg-green-100 text-green-800 px-3 py-1 rounded-full font-semibold">
+                            <i class="fas fa-users mr-1"></i>${record.familyCount}
+                        </span>
+                    </td>
+                    <td class="px-4 py-3 text-gray-600">
+                        <i class="fas fa-clock mr-1"></i>${formatTime(record.timestamp)}
+                    </td>
+                </tr>
+            `).join('');
+
+            // Mobile card view
+            mobileView.innerHTML = records.map((record, index) => `
+                <div class="bg-gradient-to-r from-green-50 to-blue-50 rounded-lg p-4 border-l-4 border-green-500 shadow-sm">
+                    <div class="flex items-start justify-between mb-3">
+                        <div class="flex-1">
+                            <div class="flex items-center gap-2 mb-2">
+                                <span class="bg-green-600 text-white text-xs font-bold px-2 py-1 rounded">
+                                    #${index + 1}
+                                </span>
+                                <span class="text-xs text-gray-500">
+                                    <i class="fas fa-clock mr-1"></i>${formatTime(record.timestamp)}
+                                </span>
+                            </div>
+                            <div class="mb-2">
+                                <p class="text-xs text-gray-600 mb-1">Membership Number</p>
+                                <p class="font-mono text-lg font-bold text-blue-600">${record.membershipNo}</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="flex items-center justify-between pt-2 border-t border-gray-200">
+                        <span class="text-sm text-gray-600">Family Members</span>
+                        <span class="bg-green-500 text-white px-4 py-2 rounded-full font-bold text-lg">
+                            <i class="fas fa-users mr-1"></i>${record.familyCount}
+                        </span>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Check if membership already issued
+        function checkDuplicate(membershipNo) {
+            return records.find(r => r.membershipNo === membershipNo);
+        }
+
+        // Show family count modal
+        function showFamilyCountModal(membershipNo) {
+            const duplicate = checkDuplicate(membershipNo);
+            
+            if (duplicate) {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Already Issued!',
+                    html: `
+                        <div class="text-left">
+                            <p class="mb-2"><strong>Membership No:</strong> ${duplicate.membershipNo}</p>
+                            <p class="mb-2"><strong>Family Count:</strong> ${duplicate.familyCount}</p>
+                            <p class="mb-2"><strong>Time Issued:</strong> ${formatTime(duplicate.timestamp)}</p>
+                        </div>
+                    `,
+                    confirmButtonColor: '#dc2626',
+                    confirmButtonText: 'OK'
+                });
+                return;
+            }
+
+            // Create number buttons HTML with better styling
+            const buttonsHtml = Array.from({length: 10}, (_, i) => i + 1).map(num => `
+                <button class="number-btn bg-gradient-to-br from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white font-bold rounded-lg text-base sm:text-lg transition-all duration-300 aspect-square flex items-center justify-center w-full" 
+                        onclick="saveMember('${membershipNo}', ${num})">
+                    ${num}
+                </button>
+            `).join('');
+
+            Swal.fire({
+                title: '<i class="fas fa-users text-green-600"></i> Select Family Members',
+                html: `
+                    <div class="text-center mb-6">
+                        <div class="bg-blue-50 border-l-4 border-blue-500 p-4 mb-4 rounded">
+                            <p class="text-sm text-gray-600 mb-1">Membership Number</p>
+                            <p class="text-xl font-mono font-bold text-blue-600">${membershipNo}</p>
+                        </div>
+                        <p class="text-gray-600 mb-4">
+                            <i class="fas fa-hand-pointer text-green-500 mr-2"></i>
+                            Tap the number of family members
+                        </p>
+                    </div>
+                    <div class="grid grid-cols-5 gap-2 sm:gap-3 max-w-2xl mx-auto px-2">
+                        ${buttonsHtml}
+                    </div>
+                `,
+                showConfirmButton: false,
+                showCancelButton: true,
+                cancelButtonText: '<i class="fas fa-times mr-2"></i>Cancel',
+                cancelButtonColor: '#6b7280',
+                width: '700px',
+                padding: '2em',
+                customClass: {
+                    popup: 'rounded-2xl',
+                    title: 'text-2xl'
+                }
+            });
+        }
+
+        // Save member record
+        window.saveMember = function(membershipNo, familyCount) {
+            const record = {
+                membershipNo,
+                familyCount,
+                timestamp: new Date().toISOString()
+            };
+
+            records.unshift(record);
+            saveRecords();
+            updateTable();
+            updateProgress();
+
+            Swal.fire({
+                icon: 'success',
+                title: 'Success!',
+                text: `Distribution recorded for ${familyCount} family member(s)`,
+                timer: 2000,
+                showConfirmButton: false
+            });
+
+            document.getElementById('membershipInput').value = '';
+        };
+
+        // Start scanner
+        document.getElementById('startScanBtn').addEventListener('click', function() {
+            const readerDiv = document.getElementById('reader');
+            
+            if (isScanning) {
+                html5QrCode.stop().then(() => {
+                    readerDiv.classList.add('hidden');
+                    isScanning = false;
+                    this.innerHTML = '<i class="fas fa-camera mr-2"></i>Start Camera Scanner';
+                    this.classList.remove('bg-red-600', 'hover:bg-red-700');
+                    this.classList.add('bg-green-600', 'hover:bg-green-700');
+                });
+                return;
+            }
+
+            readerDiv.classList.remove('hidden');
+            
+            html5QrCode = new Html5Qrcode("reader");
+            
+            html5QrCode.start(
+                { facingMode: "environment" },
+                {
+                    fps: 10,
+                    qrbox: { width: 250, height: 250 },
+                    formatsToSupport: [0] // 0 = QR_CODE only
+                },
+                (decodedText) => {
+                    document.getElementById('membershipInput').value = decodedText;
+                    showFamilyCountModal(decodedText);
+                    
+                    html5QrCode.stop().then(() => {
+                        readerDiv.classList.add('hidden');
+                        isScanning = false;
+                        document.getElementById('startScanBtn').innerHTML = '<i class="fas fa-camera mr-2"></i>Start QR Code Scanner';
+                        document.getElementById('startScanBtn').classList.remove('bg-red-600', 'hover:bg-red-700');
+                        document.getElementById('startScanBtn').classList.add('bg-green-600', 'hover:bg-green-700');
+                    });
+                }
+            ).then(() => {
+                isScanning = true;
+                this.innerHTML = '<i class="fas fa-stop mr-2"></i>Stop Scanner';
+                this.classList.remove('bg-green-600', 'hover:bg-green-700');
+                this.classList.add('bg-red-600', 'hover:bg-red-700');
+            }).catch(err => {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Camera Error',
+                    text: 'Unable to access camera. Please check permissions.'
+                });
+                readerDiv.classList.add('hidden');
+            });
+        });
+
+        // Manual submit
+        document.getElementById('manualSubmitBtn').addEventListener('click', function() {
+            const membershipNo = document.getElementById('membershipInput').value.trim();
+            
+            if (!membershipNo) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: 'Please enter a membership number'
+                });
+                return;
+            }
+
+            showFamilyCountModal(membershipNo);
+        });
+
+        // Export to Excel
+        document.getElementById('exportBtn').addEventListener('click', function() {
+            if (records.length === 0) {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'No Data',
+                    text: 'No records to export'
+                });
+                return;
+            }
+
+            const exportData = records.map((record, index) => ({
+                '#': index + 1,
+                'Membership Number': record.membershipNo,
+                'Family Members Count': record.familyCount,
+                'Time Porridge Issued': formatTime(record.timestamp)
+            }));
+
+            const ws = XLSX.utils.json_to_sheet(exportData);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "Distribution Records");
+
+            const today = new Date().toISOString().split('T')[0];
+            XLSX.writeFile(wb, `Porridge_Distribution_${today}.xlsx`);
+
+            Swal.fire({
+                icon: 'success',
+                title: 'Exported!',
+                text: 'Data exported successfully',
+                timer: 2000,
+                showConfirmButton: false
+            });
+
+            document.getElementById('resetBtn').classList.remove('hidden');
+        });
+
+        // Reset data
+        document.getElementById('resetBtn').addEventListener('click', function() {
+            Swal.fire({
+                title: 'Are you sure?',
+                text: "This will delete all distribution records!",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#dc2626',
+                cancelButtonColor: '#6b7280',
+                confirmButtonText: 'Yes, reset it!',
+                cancelButtonText: 'Cancel'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    records = [];
+                    saveRecords();
+                    updateTable();
+                    updateProgress();
+                    this.classList.add('hidden');
+                    
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Reset Complete',
+                        text: 'All records have been cleared',
+                        timer: 2000,
+                        showConfirmButton: false
+                    });
+                }
+            });
+        });
+
+        // Initialize
+        loadRecords();
+    </script>
+</body>
+</html>

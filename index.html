@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ramadan Distribution Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <style>
+        .card-hover {
+            transition: all 0.3s ease;
+        }
+        .card-hover:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+        }
+        .gradient-bg {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        .stat-card {
+            background: linear-gradient(135deg, rgba(255,255,255,0.9) 0%, rgba(255,255,255,0.7) 100%);
+            backdrop-filter: blur(10px);
+        }
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+        }
+        .float-animation {
+            animation: float 3s ease-in-out infinite;
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-green-50 via-blue-50 to-purple-50 min-h-screen">
+    <div class="container mx-auto px-4 py-6 max-w-7xl">
+        
+        <!-- Header -->
+        <div class="text-center mb-8">
+            <div class="inline-block mb-4">
+                <div class="w-20 h-20 bg-gradient-to-br from-green-500 to-emerald-600 rounded-full flex items-center justify-center shadow-lg float-animation">
+                    <i class="fas fa-moon text-white text-4xl"></i>
+                </div>
+            </div>
+            <h1 class="text-4xl md:text-5xl font-bold text-gray-800 mb-2">
+                Ramadan Distribution Dashboard
+            </h1>
+            <p class="text-gray-600 text-lg">Manage and track all distribution activities</p>
+            <div class="mt-4 text-sm text-gray-500">
+                <i class="fas fa-calendar-alt mr-2"></i>
+                <span id="currentDate"></span>
+            </div>
+        </div>
+
+        <!-- Statistics Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <!-- Total Families Card -->
+            <div class="stat-card rounded-2xl p-6 shadow-lg border border-gray-200">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-gray-600 text-sm font-semibold uppercase mb-1">Total Families</p>
+                        <h3 class="text-4xl font-bold text-gray-800">450</h3>
+                    </div>
+                    <div class="w-16 h-16 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center shadow-md">
+                        <i class="fas fa-users text-white text-2xl"></i>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Distributed Card -->
+            <div class="stat-card rounded-2xl p-6 shadow-lg border border-gray-200">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-gray-600 text-sm font-semibold uppercase mb-1">Distributed</p>
+                        <h3 class="text-4xl font-bold text-green-600" id="distributedCount">0</h3>
+                    </div>
+                    <div class="w-16 h-16 bg-gradient-to-br from-green-500 to-green-600 rounded-full flex items-center justify-center shadow-md">
+                        <i class="fas fa-check-circle text-white text-2xl"></i>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Remaining Card -->
+            <div class="stat-card rounded-2xl p-6 shadow-lg border border-gray-200">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-gray-600 text-sm font-semibold uppercase mb-1">Remaining</p>
+                        <h3 class="text-4xl font-bold text-orange-600" id="remainingCount">450</h3>
+                    </div>
+                    <div class="w-16 h-16 bg-gradient-to-br from-orange-500 to-orange-600 rounded-full flex items-center justify-center shadow-md">
+                        <i class="fas fa-hourglass-half text-white text-2xl"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Distribution Programs -->
+        <div class="mb-6">
+            <h2 class="text-2xl font-bold text-gray-800 mb-4 flex items-center">
+                <i class="fas fa-clipboard-list mr-3 text-green-600"></i>
+                Distribution Programs
+            </h2>
+        </div>
+
+        <!-- Program Cards Grid -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+            
+            <!-- Porridge Distribution Card - Active -->
+            <div class="card-hover bg-white rounded-2xl shadow-lg overflow-hidden border-2 border-green-500 cursor-pointer" onclick="navigateTo('porridge-distribution.html')">
+                <div class="bg-gradient-to-br from-green-500 to-green-600 p-6 text-white">
+                    <div class="flex items-center justify-between mb-3">
+                        <div class="w-14 h-14 bg-white bg-opacity-20 rounded-full flex items-center justify-center backdrop-blur-sm">
+                            <i class="fas fa-bowl-rice text-3xl"></i>
+                        </div>
+                        <span class="bg-white bg-opacity-30 px-3 py-1 rounded-full text-xs font-bold backdrop-blur-sm">
+                            ACTIVE
+                        </span>
+                    </div>
+                    <h3 class="text-2xl font-bold mb-2">Porridge Distribution</h3>
+                    <p class="text-green-100 text-sm">Track daily porridge distribution to families</p>
+                </div>
+                <div class="p-6">
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="flex items-center text-gray-600">
+                            <i class="fas fa-chart-pie mr-2 text-green-600"></i>
+                            <span class="text-sm font-semibold">Progress</span>
+                        </div>
+                        <span class="text-sm font-bold text-green-600" id="porridgeProgress">0%</span>
+                    </div>
+                    <div class="w-full bg-gray-200 rounded-full h-3 overflow-hidden mb-4">
+                        <div id="porridgeBar" class="bg-gradient-to-r from-green-500 to-green-600 h-3 rounded-full transition-all duration-500" style="width: 0%"></div>
+                    </div>
+                    <div class="flex items-center justify-between text-sm">
+                        <span class="text-gray-600">
+                            <i class="fas fa-users mr-1"></i>
+                            <span id="porridgeCount">0</span> / 450
+                        </span>
+                        <button class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg font-semibold transition duration-300">
+                            Open <i class="fas fa-arrow-right ml-1"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Cash Distribution Card - Active -->
+            <div class="card-hover bg-white rounded-2xl shadow-lg overflow-hidden border-2 border-orange-500 cursor-pointer" onclick="navigateTo('cash-distribution.html')">
+                <div class="bg-gradient-to-br from-orange-500 to-orange-600 p-6 text-white">
+                    <div class="flex items-center justify-between mb-3">
+                        <div class="w-14 h-14 bg-white bg-opacity-20 rounded-full flex items-center justify-center backdrop-blur-sm">
+                            <i class="fas fa-hand-holding-dollar text-3xl"></i>
+                        </div>
+                        <span class="bg-white bg-opacity-30 px-3 py-1 rounded-full text-xs font-bold backdrop-blur-sm">
+                            ACTIVE
+                        </span>
+                    </div>
+                    <h3 class="text-2xl font-bold mb-2">Cash Distribution</h3>
+                    <p class="text-orange-100 text-sm">Financial assistance and cash aid program</p>
+                </div>
+                <div class="p-6">
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="flex items-center text-gray-600">
+                            <i class="fas fa-chart-pie mr-2 text-orange-600"></i>
+                            <span class="text-sm font-semibold">Progress</span>
+                        </div>
+                        <span class="text-sm font-bold text-orange-600" id="cashProgress">0%</span>
+                    </div>
+                    <div class="w-full bg-gray-200 rounded-full h-3 overflow-hidden mb-4">
+                        <div id="cashBar" class="bg-gradient-to-r from-orange-500 to-orange-600 h-3 rounded-full transition-all duration-500" style="width: 0%"></div>
+                    </div>
+                    <div class="flex items-center justify-between text-sm">
+                        <span class="text-gray-600">
+                            <i class="fas fa-money-bill mr-1"></i>
+                            <span id="cashCount">0</span> distributed
+                        </span>
+                        <button class="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg font-semibold transition duration-300">
+                            Open <i class="fas fa-arrow-right ml-1"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Food Package Distribution - Coming Soon -->
+            <div class="card-hover bg-white rounded-2xl shadow-lg overflow-hidden border-2 border-gray-300 opacity-75">
+                <div class="bg-gradient-to-br from-purple-500 to-purple-600 p-6 text-white">
+                    <div class="flex items-center justify-between mb-3">
+                        <div class="w-14 h-14 bg-white bg-opacity-20 rounded-full flex items-center justify-center backdrop-blur-sm">
+                            <i class="fas fa-box text-3xl"></i>
+                        </div>
+                        <span class="bg-white bg-opacity-30 px-3 py-1 rounded-full text-xs font-bold backdrop-blur-sm">
+                            COMING SOON
+                        </span>
+                    </div>
+                    <h3 class="text-2xl font-bold mb-2">Food Package</h3>
+                    <p class="text-purple-100 text-sm">Monthly food package distribution</p>
+                </div>
+                <div class="p-6">
+                    <div class="flex items-center justify-center py-8 text-gray-400">
+                        <i class="fas fa-lock text-4xl"></i>
+                    </div>
+                    <p class="text-center text-gray-500 text-sm">This module will be available soon</p>
+                </div>
+            </div>
+
+            <!-- Clothing Distribution - Coming Soon -->
+            <div class="card-hover bg-white rounded-2xl shadow-lg overflow-hidden border-2 border-gray-300 opacity-75">
+                <div class="bg-gradient-to-br from-blue-500 to-blue-600 p-6 text-white">
+                    <div class="flex items-center justify-between mb-3">
+                        <div class="w-14 h-14 bg-white bg-opacity-20 rounded-full flex items-center justify-center backdrop-blur-sm">
+                            <i class="fas fa-tshirt text-3xl"></i>
+                        </div>
+                        <span class="bg-white bg-opacity-30 px-3 py-1 rounded-full text-xs font-bold backdrop-blur-sm">
+                            COMING SOON
+                        </span>
+                    </div>
+                    <h3 class="text-2xl font-bold mb-2">Clothing Distribution</h3>
+                    <p class="text-blue-100 text-sm">Eid clothing distribution program</p>
+                </div>
+                <div class="p-6">
+                    <div class="flex items-center justify-center py-8 text-gray-400">
+                        <i class="fas fa-lock text-4xl"></i>
+                    </div>
+                    <p class="text-center text-gray-500 text-sm">This module will be available soon</p>
+                </div>
+            </div>
+
+            <!-- Financial Aid - Coming Soon -->
+            <div class="card-hover bg-white rounded-2xl shadow-lg overflow-hidden border-2 border-gray-300 opacity-75">
+                <div class="bg-gradient-to-br from-orange-500 to-orange-600 p-6 text-white">
+                    <div class="flex items-center justify-between mb-3">
+                        <div class="w-14 h-14 bg-white bg-opacity-20 rounded-full flex items-center justify-center backdrop-blur-sm">
+                            <i class="fas fa-hand-holding-dollar text-3xl"></i>
+                        </div>
+                        <span class="bg-white bg-opacity-30 px-3 py-1 rounded-full text-xs font-bold backdrop-blur-sm">
+                            COMING SOON
+                        </span>
+                    </div>
+                    <h3 class="text-2xl font-bold mb-2">Financial Aid</h3>
+                    <p class="text-orange-100 text-sm">Zakat and financial assistance</p>
+                </div>
+                <div class="p-6">
+                    <div class="flex items-center justify-center py-8 text-gray-400">
+                        <i class="fas fa-lock text-4xl"></i>
+                    </div>
+                    <p class="text-center text-gray-500 text-sm">This module will be available soon</p>
+                </div>
+            </div>
+
+            <!-- Medical Assistance - Coming Soon -->
+            <div class="card-hover bg-white rounded-2xl shadow-lg overflow-hidden border-2 border-gray-300 opacity-75">
+                <div class="bg-gradient-to-br from-red-500 to-red-600 p-6 text-white">
+                    <div class="flex items-center justify-between mb-3">
+                        <div class="w-14 h-14 bg-white bg-opacity-20 rounded-full flex items-center justify-center backdrop-blur-sm">
+                            <i class="fas fa-heart-pulse text-3xl"></i>
+                        </div>
+                        <span class="bg-white bg-opacity-30 px-3 py-1 rounded-full text-xs font-bold backdrop-blur-sm">
+                            COMING SOON
+                        </span>
+                    </div>
+                    <h3 class="text-2xl font-bold mb-2">Medical Assistance</h3>
+                    <p class="text-red-100 text-sm">Healthcare and medical aid program</p>
+                </div>
+                <div class="p-6">
+                    <div class="flex items-center justify-center py-8 text-gray-400">
+                        <i class="fas fa-lock text-4xl"></i>
+                    </div>
+                    <p class="text-center text-gray-500 text-sm">This module will be available soon</p>
+                </div>
+            </div>
+
+            <!-- Education Support - Coming Soon -->
+            <div class="card-hover bg-white rounded-2xl shadow-lg overflow-hidden border-2 border-gray-300 opacity-75">
+                <div class="bg-gradient-to-br from-indigo-500 to-indigo-600 p-6 text-white">
+                    <div class="flex items-center justify-between mb-3">
+                        <div class="w-14 h-14 bg-white bg-opacity-20 rounded-full flex items-center justify-center backdrop-blur-sm">
+                            <i class="fas fa-graduation-cap text-3xl"></i>
+                        </div>
+                        <span class="bg-white bg-opacity-30 px-3 py-1 rounded-full text-xs font-bold backdrop-blur-sm">
+                            COMING SOON
+                        </span>
+                    </div>
+                    <h3 class="text-2xl font-bold mb-2">Education Support</h3>
+                    <p class="text-indigo-100 text-sm">School supplies and scholarships</p>
+                </div>
+                <div class="p-6">
+                    <div class="flex items-center justify-center py-8 text-gray-400">
+                        <i class="fas fa-lock text-4xl"></i>
+                    </div>
+                    <p class="text-center text-gray-500 text-sm">This module will be available soon</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="bg-white rounded-2xl shadow-lg p-6 mb-6">
+            <h2 class="text-xl font-bold text-gray-800 mb-4 flex items-center">
+                <i class="fas fa-bolt mr-3 text-yellow-500"></i>
+                Quick Actions
+            </h2>
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <button onclick="viewReports()" class="bg-gradient-to-br from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white p-4 rounded-xl transition duration-300 shadow-md">
+                    <i class="fas fa-chart-bar text-2xl mb-2"></i>
+                    <p class="text-sm font-semibold">View Reports</p>
+                </button>
+                <button onclick="manageMembers()" class="bg-gradient-to-br from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white p-4 rounded-xl transition duration-300 shadow-md">
+                    <i class="fas fa-users-cog text-2xl mb-2"></i>
+                    <p class="text-sm font-semibold">Manage Members</p>
+                </button>
+                <button onclick="exportData()" class="bg-gradient-to-br from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white p-4 rounded-xl transition duration-300 shadow-md">
+                    <i class="fas fa-download text-2xl mb-2"></i>
+                    <p class="text-sm font-semibold">Export Data</p>
+                </button>
+                <button onclick="settings()" class="bg-gradient-to-br from-gray-500 to-gray-600 hover:from-gray-600 hover:to-gray-700 text-white p-4 rounded-xl transition duration-300 shadow-md">
+                    <i class="fas fa-cog text-2xl mb-2"></i>
+                    <p class="text-sm font-semibold">Settings</p>
+                </button>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="text-center text-gray-500 text-sm">
+            <p><i class="fas fa-heart text-red-500 mr-1"></i> Made with compassion for Ramadan 2026</p>
+        </div>
+    </div>
+
+    <script>
+        // Set current date
+        const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+        document.getElementById('currentDate').textContent = new Date().toLocaleDateString('en-US', options);
+
+        // Load porridge distribution stats
+        function loadStats() {
+            // Porridge stats
+            const porridgeRecords = JSON.parse(localStorage.getItem('porridgeRecords') || '[]');
+            const porridgeCount = porridgeRecords.length;
+            const porridgeTotal = 450;
+            const porridgePercentage = Math.round((porridgeCount / porridgeTotal) * 100);
+
+            document.getElementById('porridgeCount').textContent = porridgeCount;
+            document.getElementById('porridgeProgress').textContent = porridgePercentage + '%';
+            document.getElementById('porridgeBar').style.width = porridgePercentage + '%';
+
+            // Cash distribution stats
+            const cashRecords = JSON.parse(localStorage.getItem('cashRecords') || '[]');
+            const cashConfig = JSON.parse(localStorage.getItem('cashConfig') || 'null');
+            const cashCount = cashRecords.length;
+            
+            if (cashConfig) {
+                const cashTotal = cashConfig.totalFamilies;
+                const cashPercentage = Math.round((cashCount / cashTotal) * 100);
+                
+                document.getElementById('cashCount').textContent = cashCount;
+                document.getElementById('cashProgress').textContent = cashPercentage + '%';
+                document.getElementById('cashBar').style.width = cashPercentage + '%';
+            } else {
+                document.getElementById('cashCount').textContent = '0';
+                document.getElementById('cashProgress').textContent = '0%';
+                document.getElementById('cashBar').style.width = '0%';
+            }
+
+            // Update overall stats
+            const totalDistributed = porridgeCount + cashCount;
+            const totalRemaining = porridgeTotal - porridgeCount; // Based on porridge total for now
+            
+            document.getElementById('distributedCount').textContent = totalDistributed;
+            document.getElementById('remainingCount').textContent = totalRemaining;
+        }
+
+        // Navigate to distribution page
+        function navigateTo(page) {
+            window.location.href = page;
+        }
+
+        // Quick action functions
+        function viewReports() {
+            Swal.fire({
+                title: 'Reports',
+                text: 'Reports module coming soon!',
+                icon: 'info',
+                confirmButtonColor: '#3b82f6'
+            });
+        }
+
+        function manageMembers() {
+            Swal.fire({
+                title: 'Member Management',
+                text: 'Member management module coming soon!',
+                icon: 'info',
+                confirmButtonColor: '#9333ea'
+            });
+        }
+
+        function exportData() {
+            Swal.fire({
+                title: 'Export Data',
+                text: 'Data export module coming soon!',
+                icon: 'info',
+                confirmButtonColor: '#16a34a'
+            });
+        }
+
+        function settings() {
+            Swal.fire({
+                title: 'Settings',
+                text: 'Settings module coming soon!',
+                icon: 'info',
+                confirmButtonColor: '#6b7280'
+            });
+        }
+
+        // Load stats on page load
+        loadStats();
+    </script>
+</body>
+</html>
