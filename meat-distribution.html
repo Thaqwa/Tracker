@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Meat Distribution - Ramadan 2026</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+        #reader { width: 100%; max-width: 500px; margin: 0 auto; border-radius: 1rem; overflow: hidden; }
+        .priority-badge { animation: pulse 2s infinite; }
+        @keyframes pulse {
+            0% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.05); opacity: 0.8; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-red-50 to-stone-100 min-h-screen">
+    <div class="container mx-auto px-4 py-6 max-w-6xl">
+        <div class="bg-white rounded-xl shadow-lg p-6 mb-6 border-l-8 border-red-700">
+            <div class="flex items-center justify-between mb-4">
+                <button onclick="location.href='index.html'" class="flex items-center gap-2 bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold py-2 px-4 rounded-lg transition">
+                    <i class="fas fa-home"></i> Dashboard
+                </button>
+                <h1 class="text-2xl md:text-3xl font-bold text-red-900 text-center flex-1">
+                    <i class="fas fa-cow mr-2"></i>Meat Distribution
+                </h1>
+                <div class="hidden sm:block text-right">
+                    <span class="text-xs text-gray-400 uppercase font-bold">Project 2026</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div class="lg:col-span-2 space-y-6">
+                <div class="bg-white rounded-xl shadow-md p-6">
+                    <h2 class="text-xl font-bold mb-4 text-gray-800">Scan QR Code</h2>
+                    <div id="reader" class="hidden mb-4 border-4 border-dashed border-gray-200"></div>
+                    <div class="flex flex-col gap-4">
+                        <button id="startScanBtn" class="w-full bg-red-700 hover:bg-red-800 text-white font-bold py-4 rounded-xl transition shadow-lg">
+                            <i class="fas fa-camera mr-2"></i>Open Scanner
+                        </button>
+                        <div class="relative">
+                            <input type="text" id="membershipInput" class="w-full px-4 py-4 border-2 border-gray-200 rounded-xl focus:border-red-500 outline-none text-lg font-mono" placeholder="PR/000/0/X/X">
+                            <button id="manualSubmitBtn" class="absolute right-2 top-2 bottom-2 bg-gray-800 text-white px-6 rounded-lg hover:bg-black transition">
+                                Issue
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-xl shadow-md overflow-hidden">
+                    <div class="p-4 bg-gray-50 border-b flex justify-between items-center">
+                        <h3 class="font-bold text-gray-700">Distribution Logs</h3>
+                        <button id="exportBtn" class="text-sm bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700">
+                            <i class="fas fa-file-excel mr-1"></i> Export
+                        </button>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left">
+                            <thead class="bg-stone-50 text-stone-500 text-xs uppercase">
+                                <tr>
+                                    <th class="px-6 py-3">Member</th>
+                                    <th class="px-6 py-3">Parcels</th>
+                                    <th class="px-6 py-3">Time</th>
+                                </tr>
+                            </thead>
+                            <tbody id="meatLogs" class="divide-y">
+                                </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div class="space-y-6">
+                <div class="bg-amber-50 rounded-xl shadow-md p-6 border border-amber-200">
+                    <h3 class="text-amber-800 font-bold mb-4 flex items-center">
+                        <i class="fas fa-star mr-2 priority-badge"></i> 2-Parcel Contributors
+                    </h3>
+                    <p class="text-xs text-amber-700 mb-4 font-medium italic">Members below are eligible for TWO parcels of meat.</p>
+                    <ul id="priorityListDisplay" class="space-y-2 max-h-96 overflow-y-auto pr-2">
+                        </ul>
+                    <div class="mt-4 pt-4 border-t border-amber-200">
+                        <button id="resetMeatBtn" class="w-full text-xs text-red-600 hover:underline">
+                            <i class="fas fa-sync-alt mr-1"></i> Reset All Distribution Data
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // CONFIGURATION: Add membership numbers for 2 parcels here
+        const priorityMembers = [
+            "FG/001/1/O/G",
+            "FG/002/1/R/G",
+            "FG/003/1/O/G",
+            "FG/004/1/O/G",
+            "FG/005/1/R/G"
+        ];
+
+        let meatRecords = JSON.parse(localStorage.getItem('meatRecords') || '[]');
+        let html5QrCode = null;
+
+        function init() {
+            renderPriorityList();
+            updateUI();
+        }
+
+        function renderPriorityList() {
+            const list = document.getElementById('priorityListDisplay');
+            list.innerHTML = priorityMembers.map(id => `
+                <li class="bg-white p-2 rounded border border-amber-200 text-sm font-mono flex justify-between items-center">
+                    ${id}
+                    <span class="bg-amber-500 text-white text-[10px] px-2 py-0.5 rounded-full font-bold">2X</span>
+                </li>
+            `).join('');
+        }
+
+        function updateUI() {
+            const tbody = document.getElementById('meatLogs');
+            if (meatRecords.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="3" class="p-8 text-center text-gray-400 italic">No meat parcels issued yet.</td></tr>`;
+                return;
+            }
+            tbody.innerHTML = meatRecords.map(r => `
+                <tr class="hover:bg-red-50">
+                    <td class="px-6 py-4 font-mono font-bold text-red-800 text-sm">${r.id}</td>
+                    <td class="px-6 py-4">
+                        <span class="${r.count > 1 ? 'bg-amber-100 text-amber-700' : 'bg-gray-100 text-gray-700'} px-3 py-1 rounded-full text-xs font-bold">
+                            ${r.count} Parcel(s)
+                        </span>
+                    </td>
+                    <td class="px-6 py-4 text-xs text-gray-500">${new Date(r.time).toLocaleTimeString()}</td>
+                </tr>
+            `).join('');
+        }
+
+        function processDistribution(id) {
+            id = id.toUpperCase().trim();
+            if (!id) return;
+
+            // Check if already received
+            if (meatRecords.some(r => r.id === id)) {
+                Swal.fire({ icon: 'error', title: 'Already Issued', text: `Member ${id} has already collected meat.` });
+                return;
+            }
+
+            // Check eligibility
+            const isPriority = priorityMembers.includes(id);
+            const defaultCount = isPriority ? 2 : 1;
+
+            Swal.fire({
+                title: isPriority ? '⭐ Priority Member' : 'Standard Member',
+                html: `Confirming distribution for <b>${id}</b><br><br>Suggested Parcel Count:`,
+                input: 'number',
+                inputValue: defaultCount,
+                showCancelButton: true,
+                confirmButtonColor: '#b91c1c',
+                inputAttributes: { min: 1, max: 5 }
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    meatRecords.unshift({ id: id, count: result.value, time: new Date().toISOString() });
+                    localStorage.setItem('meatRecords', JSON.stringify(meatRecords));
+                    updateUI();
+                    document.getElementById('membershipInput').value = '';
+                }
+            });
+        }
+
+        // Scanner Logic
+        document.getElementById('startScanBtn').addEventListener('click', function() {
+            const reader = document.getElementById('reader');
+            reader.classList.toggle('hidden');
+            if (!html5QrCode) {
+                html5QrCode = new Html5Qrcode("reader");
+            }
+            
+            if (reader.classList.contains('hidden')) {
+                html5QrCode.stop();
+                this.innerHTML = '<i class="fas fa-camera mr-2"></i>Open Scanner';
+            } else {
+                this.innerHTML = '<i class="fas fa-times mr-2"></i>Close Scanner';
+                html5QrCode.start({ facingMode: "environment" }, { fps: 10, qrbox: 250 }, 
+                    (text) => {
+                        processDistribution(text);
+                        // Optional: stop scanner after success
+                    }
+                ).catch(err => {
+                    Swal.fire('Camera Error', 'Access denied', 'error');
+                    reader.classList.add('hidden');
+                });
+            }
+        });
+
+        document.getElementById('manualSubmitBtn').addEventListener('click', () => {
+            processDistribution(document.getElementById('membershipInput').value);
+        });
+
+        document.getElementById('resetMeatBtn').addEventListener('click', () => {
+            Swal.fire({
+                title: 'Clear Data?',
+                text: "This will delete all meat distribution logs. Priority list remains safe.",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#d33'
+            }).then((res) => {
+                if(res.isConfirmed) {
+                    meatRecords = [];
+                    localStorage.removeItem('meatRecords');
+                    updateUI();
+                }
+            });
+        });
+
+        document.getElementById('exportBtn').addEventListener('click', () => {
+            const ws = XLSX.utils.json_to_sheet(meatRecords);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "MeatLogs");
+            XLSX.writeFile(wb, "Meat_Distribution_Report.xlsx");
+        });
+
+        init();
+    </script>
+</body>
+</html>
