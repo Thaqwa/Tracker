@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ramadan Dates Distribution</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+        #reader { width: 100%; max-width: 500px; margin: 0 auto; border-radius: 1rem; overflow: hidden; }
+        .number-btn { transition: all 0.3s ease; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); }
+        .number-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15); }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-orange-50 to-red-50 min-h-screen">
+    <div class="container mx-auto px-4 py-6 max-w-6xl">
+        <div class="bg-white rounded-lg shadow-lg p-6 mb-6 border-t-4 border-orange-600">
+            <div class="flex items-center justify-between mb-4">
+                <button onclick="location.href='index.html'" class="flex items-center gap-2 bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold py-2 px-4 rounded-lg transition duration-300">
+                    <i class="fas fa-arrow-left"></i>
+                    <span class="hidden sm:inline">Dashboard</span>
+                </button>
+                <h1 class="text-2xl md:text-3xl font-bold text-orange-800 text-center flex-1">
+                    <i class="fas fa-leaf mr-2"></i>Dates Distribution
+                </h1>
+                <div class="w-20 sm:w-24"></div>
+            </div>
+            
+            <div class="mt-4">
+                <div class="flex justify-between items-center mb-2">
+                    <span class="text-sm font-semibold text-gray-700">Daily Quota Progress</span>
+                    <span class="text-sm font-bold text-orange-600">
+                        <span id="progressCount">0</span> / 450 Families
+                    </span>
+                </div>
+                <div class="w-full bg-gray-200 rounded-full h-4 overflow-hidden shadow-inner">
+                    <div id="progressBar" class="bg-gradient-to-r from-orange-500 to-red-600 h-4 rounded-full transition-all duration-500" style="width: 0%"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-lg shadow-lg p-6 mb-6">
+            <div id="reader" class="hidden mb-4"></div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <button id="startScanBtn" class="bg-orange-600 hover:bg-orange-700 text-white font-bold py-4 px-6 rounded-xl transition duration-300">
+                    <i class="fas fa-qrcode mr-2"></i>Scan Member QR
+                </button>
+                <div class="relative">
+                    <input type="text" id="membershipInput" 
+                        class="w-full px-4 py-4 border-2 border-gray-300 rounded-xl focus:border-orange-500 focus:outline-none text-lg"
+                        placeholder="Manual Entry">
+                    <button id="manualSubmitBtn" class="absolute right-2 top-2 bottom-2 bg-blue-600 text-white px-4 rounded-lg">
+                        Submit
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="flex flex-wrap gap-4 mb-6">
+            <button id="exportBtn" class="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 rounded-lg shadow-md transition">
+                <i class="fas fa-file-excel mr-2"></i>Export Excel
+            </button>
+            <button id="resetBtn" class="flex-1 bg-red-100 hover:bg-red-200 text-red-700 font-bold py-3 rounded-lg border border-red-300 transition">
+                <i class="fas fa-trash-alt mr-2"></i>Reset Today's Data
+            </button>
+        </div>
+
+        <div class="bg-white rounded-lg shadow-lg overflow-hidden">
+            <div class="p-4 bg-orange-50 border-b border-orange-100">
+                <h2 class="font-bold text-orange-800"><i class="fas fa-history mr-2"></i>Recent Distributions</h2>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full text-left">
+                    <thead class="bg-gray-50 text-gray-600 text-sm uppercase">
+                        <tr>
+                            <th class="px-6 py-4">Member ID</th>
+                            <th class="px-6 py-4">Packets</th>
+                            <th class="px-6 py-4">Time</th>
+                        </tr>
+                    </thead>
+                    <tbody id="recordsBody" class="divide-y divide-gray-100">
+                        </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let html5QrCode = null;
+        let records = JSON.parse(localStorage.getItem('datesRecords') || '[]');
+        const TOTAL_FAMILIES = 450;
+
+        function updateUI() {
+            const count = records.length;
+            const percent = (count / TOTAL_FAMILIES) * 100;
+            document.getElementById('progressCount').textContent = count;
+            document.getElementById('progressBar').style.width = percent + '%';
+
+            const tbody = document.getElementById('recordsBody');
+            if(records.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="3" class="p-10 text-center text-gray-400">No dates distributed yet.</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = records.map(r => `
+                <tr class="hover:bg-orange-50/50">
+                    <td class="px-6 py-4 font-mono font-bold text-blue-700">${r.id}</td>
+                    <td class="px-6 py-4"><span class="bg-orange-100 text-orange-700 py-1 px-3 rounded-full text-sm font-bold">${r.count} Packets</span></td>
+                    <td class="px-6 py-4 text-gray-500 text-sm">${new Date(r.time).toLocaleTimeString()}</td>
+                </tr>
+            `).join('');
+        }
+
+        function handleDistribution(id) {
+            if (records.some(r => r.id === id)) {
+                Swal.fire('Already Issued', `Member ${id} has already received dates today.`, 'warning');
+                return;
+            }
+
+            Swal.fire({
+                title: 'Date Packets',
+                text: `How many packets for Member ${id}?`,
+                input: 'number',
+                inputValue: 1,
+                showCancelButton: true,
+                confirmButtonColor: '#ea580c',
+                inputAttributes: { min: 1, max: 10, step: 1 }
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    records.unshift({ id: id, count: result.value, time: new Date().toISOString() });
+                    localStorage.setItem('datesRecords', JSON.stringify(records));
+                    updateUI();
+                    Swal.fire({ icon: 'success', title: 'Recorded', timer: 1000, showConfirmButton: false });
+                    document.getElementById('membershipInput').value = '';
+                }
+            });
+        }
+
+        // Scanner Logic
+        document.getElementById('startScanBtn').addEventListener('click', function() {
+            const reader = document.getElementById('reader');
+            reader.classList.remove('hidden');
+            html5QrCode = new Html5Qrcode("reader");
+            html5QrCode.start({ facingMode: "environment" }, { fps: 10, qrbox: 250 }, 
+                (text) => {
+                    html5QrCode.stop();
+                    reader.classList.add('hidden');
+                    handleDistribution(text);
+                }
+            ).catch(err => Swal.fire('Error', 'Camera access denied', 'error'));
+        });
+
+        // Manual Submit
+        document.getElementById('manualSubmitBtn').addEventListener('click', () => {
+            const val = document.getElementById('membershipInput').value.trim();
+            if(val) handleDistribution(val);
+        });
+
+        // Reset Function
+        document.getElementById('resetBtn').addEventListener('click', () => {
+            Swal.fire({
+                title: 'Reset Dates Data?',
+                text: "This will clear today's dates distribution only.",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#d33',
+                confirmButtonText: 'Yes, clear it!'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    records = [];
+                    localStorage.removeItem('datesRecords');
+                    updateUI();
+                    Swal.fire('Cleared!', 'Storage for this page has been reset.', 'success');
+                }
+            });
+        });
+
+        // Export Excel
+        document.getElementById('exportBtn').addEventListener('click', () => {
+            const ws = XLSX.utils.json_to_sheet(records);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "Dates");
+            XLSX.writeFile(wb, `Dates_Distribution_${new Date().toLocaleDateString()}.xlsx`);
+        });
+
+        updateUI();
+    </script>
+</body>
+</html>
