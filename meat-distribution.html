@@ -110,16 +110,30 @@
 
         function renderPriorityList() {
             const list = document.getElementById('priorityListDisplay');
-            list.innerHTML = priorityMembers.map(id => `
-                <li class="bg-white p-2 rounded border border-amber-200 text-sm font-mono flex justify-between items-center shadow-sm">
-                    <span class="font-bold text-amber-900">${id}</span>
-                    <span class="bg-amber-500 text-white text-[10px] px-2 py-0.5 rounded-full font-black italic">2X PARCEL</span>
-                </li>
-            `).join('');
+            
+            list.innerHTML = priorityMembers.map(id => {
+                // Check if this priority member has already collected meat
+                const hasCollected = meatRecords.some(r => r.id.toUpperCase() === id.toUpperCase());
+                
+                return `
+                    <li class="p-2 rounded border border-amber-200 text-sm font-mono flex justify-between items-center shadow-sm transition-all duration-500 ${hasCollected ? 'bg-gray-100 opacity-60' : 'bg-white'}">
+                        <span class="font-bold ${hasCollected ? 'line-through text-gray-400' : 'text-amber-900'}">
+                            ${hasCollected ? '<i class="fas fa-check-circle mr-1 text-green-600"></i>' : ''} ${id}
+                        </span>
+                        <span class="${hasCollected ? 'bg-gray-400' : 'bg-amber-500'} text-white text-[10px] px-2 py-0.5 rounded-full font-black italic">
+                            2X PARCEL
+                        </span>
+                    </li>
+                `;
+            }).join('');
         }
 
         function updateUI() {
             const tbody = document.getElementById('meatLogs');
+
+            // Refresh the priority list visual states
+            renderPriorityList(); 
+
             if (meatRecords.length === 0) {
                 tbody.innerHTML = `<tr><td colspan="3" class="p-12 text-center text-gray-400 italic">No distribution records found.</td></tr>`;
                 return;
