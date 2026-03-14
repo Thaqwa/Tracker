@@ -250,9 +250,25 @@
                     <p class="text-red-100 text-sm">Validate 1-parcel vs 2-parcel eligibility</p>
                 </div>
                 <div class="p-6">
-                    <div class="flex items-center justify-between text-sm text-gray-600">
-                        <span><i class="fas fa-user-check mr-2"></i> Tracked locally</span>
-                        <button class="bg-red-700 text-white px-4 py-2 rounded-lg font-semibold">Open</button>
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="flex items-center text-gray-600">
+                            <i class="fas fa-chart-line mr-2 text-red-700"></i>
+                            <span class="text-sm font-semibold">Progress</span>
+                        </div>
+                        <span class="text-sm font-bold text-red-700" id="meatProgress">0%</span>
+                    </div>
+                    <div class="w-full bg-gray-200 rounded-full h-3 overflow-hidden mb-4">
+                        <div id="meatBar" class="bg-gradient-to-r from-red-600 to-red-800 h-3 rounded-full transition-all duration-500" style="width: 0%"></div>
+                    </div>
+                    
+                    <div class="flex items-center justify-between text-sm">
+                        <span class="text-gray-600 font-medium">
+                            <i class="fas fa-users mr-1"></i>
+                            <span id="meatCount">0</span> / 450
+                        </span>
+                        <button class="bg-red-700 hover:bg-red-800 text-white px-4 py-2 rounded-lg font-semibold transition duration-300">
+                            Open <i class="fas fa-arrow-right ml-1 text-xs"></i>
+                        </button>
                     </div>
                 </div>
             </div>
@@ -385,50 +401,51 @@
 
         // Load porridge distribution stats
         function loadStats() {
-            // Porridge stats
+            // 1. Load Porridge Data
             const porridgeRecords = JSON.parse(localStorage.getItem('porridgeRecords') || '[]');
             const porridgeCount = porridgeRecords.length;
             const porridgeTotal = 450;
-            const porridgePercentage = Math.round((porridgeCount / porridgeTotal) * 100);
+            const porridgePercent = Math.min(Math.round((porridgeCount / porridgeTotal) * 100), 100);
 
-            document.getElementById('porridgeCount').textContent = porridgeCount;
-            document.getElementById('porridgeProgress').textContent = porridgePercentage + '%';
-            document.getElementById('porridgeBar').style.width = porridgePercentage + '%';
+            // Update Porridge UI
+            if(document.getElementById('porridgeCount')) document.getElementById('porridgeCount').textContent = porridgeCount;
+            if(document.getElementById('porridgeProgress')) document.getElementById('porridgeProgress').textContent = porridgePercent + '%';
+            if(document.getElementById('porridgeBar')) document.getElementById('porridgeBar').style.width = porridgePercent + '%';
 
-            // Cash distribution stats
-            const cashRecords = JSON.parse(localStorage.getItem('cashRecords') || '[]');
-            const cashConfig = JSON.parse(localStorage.getItem('cashConfig') || 'null');
-            const cashCount = cashRecords.length;
-            
-            if (cashConfig) {
-                const cashTotal = cashConfig.totalFamilies;
-                const cashPercentage = Math.round((cashCount / cashTotal) * 100);
-                
-                document.getElementById('cashCount').textContent = cashCount;
-                document.getElementById('cashProgress').textContent = cashPercentage + '%';
-                document.getElementById('cashBar').style.width = cashPercentage + '%';
-            } else {
-                document.getElementById('cashCount').textContent = '0';
-                document.getElementById('cashProgress').textContent = '0%';
-                document.getElementById('cashBar').style.width = '0%';
-            }
-
-            // Dates stats
+            // 2. Load Dates Data
             const datesRecords = JSON.parse(localStorage.getItem('datesRecords') || '[]');
             const datesCount = datesRecords.length;
             const datesTotal = 450;
-            const datesPercentage = Math.round((datesCount / datesTotal) * 100);
+            const datesPercent = Math.min(Math.round((datesCount / datesTotal) * 100), 100);
 
-            document.getElementById('datesCount').textContent = datesCount;
-            document.getElementById('datesProgress').textContent = datesPercentage + '%';
-            document.getElementById('datesBar').style.width = datesPercentage + '%';
+            // Update Dates UI
+            if(document.getElementById('datesCount')) document.getElementById('datesCount').textContent = datesCount;
+            if(document.getElementById('datesProgress')) document.getElementById('datesProgress').textContent = datesPercent + '%';
+            if(document.getElementById('datesBar')) document.getElementById('datesBar').style.width = datesPercent + '%';
 
-            // Update overall stats
-            const totalDistributed = porridgeCount + cashCount + datesCount;
-            const totalRemaining = porridgeTotal - porridgeCount; // Based on porridge total for now
-            
-            document.getElementById('distributedCount').textContent = totalDistributed;
-            document.getElementById('remainingCount').textContent = totalRemaining;
+            // 3. Load Meat Data
+            const meatRecords = JSON.parse(localStorage.getItem('meatRecords') || '[]');
+            const meatCount = meatRecords.length;
+            const meatTotal = 450;
+            const meatPercent = Math.min(Math.round((meatCount / meatTotal) * 100), 100);
+
+            // Update Meat UI
+            if(document.getElementById('meatCount')) document.getElementById('meatCount').textContent = meatCount;
+            if(document.getElementById('meatProgress')) document.getElementById('meatProgress').textContent = meatPercent + '%';
+            if(document.getElementById('meatBar')) document.getElementById('meatBar').style.width = meatPercent + '%';
+
+            // 4. Update Global/Summary Counters
+            const totalDistributed = porridgeCount + datesCount + meatCount;
+            const maxPossible = porridgeTotal + datesTotal + meatTotal;
+            const totalRemaining = maxPossible - totalDistributed;
+
+            // Update Summary Header IDs (Ensure these exist in your index.html)
+            if(document.getElementById('distributedCount')) {
+                document.getElementById('distributedCount').textContent = totalDistributed;
+            }
+            if(document.getElementById('remainingCount')) {
+                document.getElementById('remainingCount').textContent = totalRemaining;
+            }
         }
 
         // Navigate to distribution page
