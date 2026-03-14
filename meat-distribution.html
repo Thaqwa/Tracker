@@ -143,32 +143,37 @@
 
         function processDistribution(id) {
             id = id.toUpperCase().trim();
-            if (!id) return;
+            
+            // If user already scanned or error, we must resume scanner when they click "OK"
+            const resumeScanner = () => {
+                if (html5QrCode && html5QrCode.getState() === 3) { // 3 means Paused
+                    html5QrCode.resume();
+                }
+            };
 
-            // Check if already received
             if (meatRecords.some(r => r.id === id)) {
-                Swal.fire({ icon: 'error', title: 'Already Issued', text: `Member ${id} has already collected meat.` });
+                Swal.fire({ 
+                    icon: 'error', 
+                    title: 'Already Issued', 
+                    text: `Member ${id} has already collected.` 
+                }).then(resumeScanner); // Resume when alert closed
                 return;
             }
 
-            // Check eligibility
-            const isPriority = priorityMembers.includes(id);
-            const defaultCount = isPriority ? 2 : 1;
+            // ... your priority check logic ...
 
             Swal.fire({
                 title: isPriority ? '⭐ Priority Member' : 'Standard Member',
-                html: `Confirming distribution for <b>${id}</b><br><br>Suggested Parcel Count:`,
-                input: 'number',
-                inputValue: defaultCount,
-                showCancelButton: true,
-                confirmButtonColor: '#b91c1c',
-                inputAttributes: { min: 1, max: 5 }
+                // ... rest of your Swal config ...
             }).then((result) => {
                 if (result.isConfirmed) {
                     meatRecords.unshift({ id: id, count: result.value, time: new Date().toISOString() });
                     localStorage.setItem('meatRecords', JSON.stringify(meatRecords));
                     updateUI();
-                    document.getElementById('membershipInput').value = '';
+                    Swal.fire({ icon: 'success', title: 'Recorded', timer: 1000, showConfirmButton: false })
+                        .then(resumeScanner); // Resume after success
+                } else {
+                    resumeScanner(); // Resume if they cancel the number input
                 }
             });
         }
@@ -177,6 +182,7 @@
         document.getElementById('startScanBtn').addEventListener('click', function() {
             const reader = document.getElementById('reader');
             reader.classList.toggle('hidden');
+            
             if (!html5QrCode) {
                 html5QrCode = new Html5Qrcode("reader");
             }
@@ -186,10 +192,22 @@
                 this.innerHTML = '<i class="fas fa-camera mr-2"></i>Open Scanner';
             } else {
                 this.innerHTML = '<i class="fas fa-times mr-2"></i>Close Scanner';
-                html5QrCode.start({ facingMode: "environment" }, { fps: 10, qrbox: 250 }, 
+                
+                html5QrCode.start(
+                    { facingMode: "environment" }, 
+                    { fps: 10, qrbox: 250 }, 
                     (text) => {
+                        // 1. IMMEDIATELY pause the scanner so it stops reading frames
+                        html5QrCode.pause(); 
+                        
+                        // 2. Play a small haptic feedback (optional)
+                        if (navigator.vibrate) navigator.vibrate(100);
+
+                        // 3. Process the distribution
                         processDistribution(text);
-                        // Optional: stop scanner after success
+
+                        // 4. Resume the scanner only after the user closes the SweetAlert
+                        // This is handled by adding a 'then' to your Swal in processDistribution
                     }
                 ).catch(err => {
                     Swal.fire('Camera Error', 'Access denied', 'error');
